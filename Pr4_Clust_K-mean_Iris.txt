@@ -1,0 +1,94 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+
+# Load the Iris dataset
+df = pd.read_csv("C:/Desktop Dummy/ml practicals/iris.csv")
+
+
+df
+
+df.info()
+
+df.describe()
+
+
+df.dtypes
+
+
+df.shape
+
+
+df.columns
+
+
+df.head()
+
+
+df.tail()
+
+
+print(df.columns.tolist())
+
+
+# Select features (attributes) for clustering (e.g., sepal_length, sepal_width, petal_length, petal_width)
+X = df.iloc[:, 1:-1]  # Exclude the first column (id) and the last column (species)
+
+
+# Standardize the feature matrix (important for K-Means)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+
+
+# Determine the optimal number of clusters using the elbow method
+inertia = []
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    inertia.append(kmeans.inertia_)
+
+
+
+print(inertia)
+
+
+# Plot the Elbow Curve
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), inertia, marker='o', linestyle='--', color='b')
+plt.xlabel('Number of Clusters (k)', fontsize=12)
+plt.ylabel('Inertia (Within-Cluster Sum of Squares)', fontsize=12)
+plt.title('Elbow Method for Optimal Number of Clusters', fontsize=14)
+plt.grid(True)
+plt.show()
+
+
+
+# Apply K-Means Clustering with optimal number of clusters (k=3)
+# -----------------------------------------------
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+y_kmeans = kmeans.fit_predict(X_scaled)
+
+
+
+# Visualize the Clusters using PCA (2D projection)
+# -----------------------------------------------
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+
+
+plt.figure(figsize=(8, 6))
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y_kmeans, cmap='viridis', s=50)
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1],
+            s=200, c='red', marker='X', label='Centroids')
+plt.title('K-Means Clustering on Iris Dataset (PCA-reduced)', fontsize=14)
+plt.xlabel('Principal Component 1', fontsize=12)
+plt.ylabel('Principal Component 2', fontsize=12)
+plt.legend()
+plt.grid(True)
+plt.show()
