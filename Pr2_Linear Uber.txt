@@ -1,0 +1,154 @@
+# Import required libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("C:/Desktop Dummy/ml practicals/uber.csv")
+
+df
+
+df.info()
+
+df.describe()
+
+df.dtypes
+
+df.shape
+
+df.columns
+
+df.head()
+
+df.tail()
+
+print(df.columns.tolist())
+
+# Step 2: Convert Date-Time and Create New Features
+# ==========================
+df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
+df['hour'] = df['pickup_datetime'].dt.hour
+df['day_of_week'] = df['pickup_datetime'].dt.dayofweek
+
+
+# Step 3: Feature Engineering - Calculate Trip Distance
+# ==========================
+df['distance'] = np.sqrt(
+    (df['dropoff_longitude'] - df['pickup_longitude'])**2 +
+    (df['dropoff_latitude'] - df['pickup_latitude'])**2
+)
+
+
+# Step 4: Data Cleaning
+# ==========================
+df = df.drop(columns=['Unnamed: 0', 'key', 'pickup_datetime'])
+df = df[(df['fare_amount'] > 0) & (df['fare_amount'] < 100)]
+
+
+print(df)
+
+# Handle missing values
+from sklearn.impute import SimpleImputer
+
+imputer = SimpleImputer(strategy='mean')
+df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
+
+
+# Step 5: Split Data into Features and Target
+# ==========================
+from sklearn.model_selection import train_test_split
+
+X = df_imputed.drop(columns=['fare_amount'])
+y = df_imputed['fare_amount']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+
+# Step 6: Feature Scaling
+# ==========================
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+
+
+# Implement Linear Regression
+from sklearn.linear_model import LinearRegression
+
+lr_model = LinearRegression()
+lr_model.fit(X_train_scaled, y_train)
+y_pred_lr = lr_model.predict(X_test_scaled)
+
+
+# Implement Ridge Regression
+from sklearn.linear_model import Ridge
+
+ridge_model = Ridge(alpha=1.0)  # You can experiment with different alpha values
+ridge_model.fit(X_train_scaled, y_train)
+y_pred_ridge = ridge_model.predict(X_test_scaled)
+
+
+# Implement Lasso Regression
+from sklearn.linear_model import Lasso
+
+lasso_model = Lasso(alpha=0.1)  # You can experiment with different alpha values
+lasso_model.fit(X_train_scaled, y_train)
+y_pred_lasso = lasso_model.predict(X_test_scaled)
+
+
+# Step 9: Evaluate Models
+# ==========================
+def evaluate_model(y_true, y_pred, model_name):
+    r2 = r2_score(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    print(f"{model_name} - R2 Score: {r2:.4f}, RMSE: {rmse:.2f}")
+    return r2, rmse
+
+r2_lr, rmse_lr = evaluate_model(y_test, y_pred_lr, "Linear Regression")
+r2_ridge, rmse_ridge = evaluate_model(y_test, y_pred_ridge, "Ridge Regression")
+r2_lasso, rmse_lasso = evaluate_model(y_test, y_pred_lasso, "Lasso Regression")
+
+
+
+# Step 10: Visualization
+# ==========================
+models = ['Linear', 'Ridge', 'Lasso']
+r2_scores = [r2_lr, r2_ridge, r2_lasso]
+rmse_scores = [rmse_lr, rmse_ridge, rmse_lasso]
+
+plt.figure(figsize=(10, 5))
+
+
+# --- Plot 1: R² Score Comparison ---
+plt.subplot(1, 2, 1)
+plt.bar(models, r2_scores, color=['skyblue', 'lightgreen', 'salmon'])
+plt.title("Model Comparison (R² Score)")
+plt.xlabel("Regression Model")
+plt.ylabel("R² Score")
+plt.ylim(0, 1)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+
+# RMSE comparison
+plt.subplot(1, 2, 2)
+plt.bar(models, rmse_scores, color=['skyblue', 'lightgreen', 'salmon'])
+plt.title("Model Comparison (RMSE)")
+plt.ylabel("RMSE")
+
+plt.tight_layout()
+plt.show()
+
+
+
+# Actual vs Predicted for Linear Regression
+plt.figure(figsize=(6, 6))
+plt.scatter(y_test[:100], y_pred_lr[:100], color='blue', alpha=0.6, label='Predicted')
+plt.plot([0, 50], [0, 50], 'r--', label='Perfect Fit')
+plt.xlabel("Actual Fare")
+plt.ylabel("Predicted Fare")
+plt.title("Actual vs Predicted Fare (Linear Regression)")
+plt.legend()
+plt.show()
