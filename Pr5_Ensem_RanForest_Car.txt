@@ -1,0 +1,134 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+# Load car evaluation dataset
+data = pd.read_csv("C:/Desktop Dummy/ml practicals/car_evaluation.csv")
+
+
+data
+
+data.info()
+
+data.describe()
+
+
+data.dtypes
+
+
+data.shape
+
+
+data.head()
+
+
+data.tail()
+
+
+print(data.columns.tolist())
+
+
+
+# Check for missing values
+print("Missing Values:\n", data.isnull().sum(), "\n")
+
+
+
+# Data Preprocessing
+# ============================================================
+# Encode all categorical columns using LabelEncoder
+from sklearn.preprocessing import LabelEncoder
+
+label_encoder = LabelEncoder()
+data = data.apply(LabelEncoder().fit_transform)
+
+
+
+# Display encoded dataset
+print("Encoded Dataset Sample:\n", data.head(), "\n")
+
+
+# Define Features and Target Variable
+# ============================================================
+from sklearn.model_selection import train_test_split
+
+X = data.iloc[:, :-1]  # Independent variables (all except last)
+y = data.iloc[:, -1]   # Target variable (last column)
+
+
+# Split dataset into Train (80%) and Test (20%)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+
+
+print(f"Training Samples: {X_train.shape[0]}")
+print(f"Testing Samples: {X_test.shape[0]}\n")
+
+
+
+# Create a Random Forest Classifier
+from sklearn.ensemble import RandomForestClassifier
+
+rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+
+
+
+# Train the classifier on the training data
+rf_classifier.fit(X_train, y_train)
+
+
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+
+# Make predictions on the test data
+y_pred = rf_classifier.predict(X_test)
+
+
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+confusion = confusion_matrix(y_test, y_pred)
+classification_rep = classification_report(y_test, y_pred)
+
+
+
+print(f"Accuracy: {accuracy}")
+
+
+print("\nConfusion Matrix:\n", confusion)
+
+
+print("\nClassification Report:\n", classification_rep)
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(7,5))
+sns.countplot(x='low', hue='unacc', data=data, palette='Set2')
+plt.title("Car Safety vs Car Evaluation Class", fontsize=14)
+plt.xlabel("Safety Level (Encoded)")
+plt.ylabel("Number of Cars")
+plt.legend(title='Car Evaluation Class', loc='upper left')
+plt.tight_layout()
+plt.show()
+
+
+
+# Mapping encoded safety levels back to labels
+safety_map = {0: 'low', 1: 'med', 2: 'high'}
+data['low'] = data['low'].map(safety_map)
+
+# Then plot again
+plt.figure(figsize=(7,5))
+sns.countplot(x='low', hue='unacc', data=data, palette='coolwarm')
+plt.title("Car Safety Level vs Car Evaluation Class", fontsize=14)
+plt.xlabel("Safety Level")
+plt.ylabel("Count")
+plt.legend(title='Car Evaluation Class', loc='upper left')
+plt.tight_layout()
+plt.show()
